@@ -1,0 +1,16 @@
+{
+  "name": "porto-velho-geoportal",
+  "version": "1.0.0",
+  "description": "Geoportal WebGIS interativo para visualização de camadas ambientais e fundiárias de Porto Velho, RO.",
+  "scripts": {
+    "start": "npx http-server ./web -o"
+  },
+  "keywords": [
+    "webgis",
+    "leaflet",
+    "sicar",
+    "geoportal"
+  ],
+  "author": "Antigravity",
+  "license": "ISC"
+}

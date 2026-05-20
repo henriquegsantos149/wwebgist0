@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geoportal Porto Velho | WebGIS Ambiental</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome (Ícones) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Leaflet Geoman (Ferramenta de Desenho/Medição) -->
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.css" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Tela de Carregamento (Loading Splash Screen) -->
+    <div id="loading-screen">
+        <div class="loading-box">
+            <div class="loading-logo">
+                <img src="Logo_Branca_Ambiental_Pro_Horiz.png" alt="Ambiental Pro" class="loading-brand-logo">
+                <i class="fa-solid fa-earth-americas fa-spin-slow spinner-overlay"></i>
+            </div>
+            <h2>Geoportal Porto Velho</h2>
+            <p class="loading-subtitle">Carregando dados geoespaciais...</p>
+            
+            <div class="loading-progress-container">
+                <div class="progress-bar">
+                    <div id="progress-bar-fill" style="width: 0%;"></div>
+                </div>
+                <div id="progress-percentage">0%</div>
+            </div>
+
+            <ul class="loading-steps">
+                <li id="step-boundary"><i class="fa-solid fa-circle-notch fa-spin"></i> Limite Municipal (393 KB)</li>
+                <li id="step-highways-est"><i class="fa-solid fa-circle-notch fa-spin"></i> Rodovias Estaduais (286 KB)</li>
+                <li id="step-highways-fed"><i class="fa-solid fa-circle-notch fa-spin"></i> Rodovias Federais (3.4 MB)</li>
+                <li id="step-drainage"><i class="fa-solid fa-circle-notch fa-spin"></i> Trechos de Drenagem (13.1 MB)</li>
+                <li id="step-sicar"><i class="fa-solid fa-circle-notch fa-spin"></i> Imóveis Rurais SICAR (19.5 MB)</li>
+                <li id="step-map"><i class="fa-solid fa-circle-notch fa-spin"></i> Inicializando Interface...</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Container Principal do Aplicativo -->
+    <div id="app-container">
+        
+        <!-- Botão para Recolher/Expandir a Sidebar -->
+        <button id="toggle-sidebar" title="Ocultar/Mostrar Painel">
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <!-- Painel Lateral (Sidebar) -->
+        <aside id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-wrapper">
+                    <div class="logo">
+                        <img src="Logo_Branca_Ambiental_Pro_Horiz.png" alt="Ambiental Pro" class="brand-logo-img">
+                    </div>
+                    <span class="status-badge-live"><span class="pulse-dot"></span>ATIVO</span>
+                </div>
+                <h1>Geoportal Porto Velho</h1>
+                <p class="subtitle">WebGIS de Gestão Territorial & Ambiental</p>
+            </div>
+
+            <div class="sidebar-content">
+                <!-- Seção 1: Mapas de Fundo -->
+                <div class="sidebar-section">
+                    <h3><i class="fa-solid fa-map"></i> Mapas de Fundo</h3>
+                    <div class="basemap-selector">
+                        <label class="basemap-card active" data-basemap="osm">
+                            <input type="radio" name="basemap" value="osm" checked>
+                            <i class="fa-solid fa-map-location-dot"></i>
+                            <span class="basemap-title">Padrão</span>
+                        </label>
+
+                        <label class="basemap-card" data-basemap="satellite">
+                            <input type="radio" name="basemap" value="satellite">
+                            <i class="fa-solid fa-satellite"></i>
+                            <span class="basemap-title">Satélite</span>
+                        </label>
+
+                        <label class="basemap-card" data-basemap="dark">
+                            <input type="radio" name="basemap" value="dark">
+                            <i class="fa-solid fa-moon"></i>
+                            <span class="basemap-title">Escuro</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Seção 2: Gerenciador de Camadas -->
+                <div class="sidebar-section">
+                    <h3><i class="fa-solid fa-layer-group"></i> Camadas Temáticas</h3>
+                    <div class="layer-manager">
+                        <!-- Camada: Limite Municipal -->
+                        <div class="layer-item">
+                            <div class="layer-main">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" id="chk-boundary" checked>
+                                    <span class="checkmark"></span>
+                                    <span class="layer-name">Limite Municipal</span>
+                                </label>
+                                <span class="legend-indicator border-only red-dashed" title="Contorno tracejado vermelho"></span>
+                            </div>
+                            <div class="layer-controls">
+                                <span class="opacity-label">Opacidade:</span>
+                                <input type="range" class="layer-opacity" id="op-boundary" min="0" max="1" step="0.1" value="1">
+                            </div>
+                        </div>
+
+                        <!-- Camada: Rodovias Federais -->
+                        <div class="layer-item">
+                            <div class="layer-main">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" id="chk-highways-fed" checked>
+                                    <span class="checkmark"></span>
+                                    <span class="layer-name">Rodovias Federais (BR)</span>
+                                </label>
+                                <span class="legend-indicator line blue-line" title="Linha azul sólida"></span>
+                            </div>
+                            <div class="layer-controls">
+                                <span class="opacity-label">Opacidade:</span>
+                                <input type="range" class="layer-opacity" id="op-highways-fed" min="0" max="1" step="0.1" value="0.9">
+                            </div>
+                        </div>
+
+                        <!-- Camada: Rodovias Estaduais -->
+                        <div class="layer-item">
+                            <div class="layer-main">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" id="chk-highways-est" checked>
+                                    <span class="checkmark"></span>
+                                    <span class="layer-name">Rodovias Estaduais (RO)</span>
+                                </label>
+                                <span class="legend-indicator line orange-line" title="Linha laranja sólida"></span>
+                            </div>
+                            <div class="layer-controls">
+                                <span class="opacity-label">Opacidade:</span>
+                                <input type="range" class="layer-opacity" id="op-highways-est" min="0" max="1" step="0.1" value="0.8">
+                            </div>
+                        </div>
+
+                        <!-- Camada: Drenagem -->
+                        <div class="layer-item">
+                            <div class="layer-main">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" id="chk-drainage" checked>
+                                    <span class="checkmark"></span>
+                                    <span class="layer-name">Drenagem (Rios/Canais)</span>
+                                </label>
+                                <span class="legend-indicator line cyan-line" title="Linha ciano fina"></span>
+                            </div>
+                            <div class="layer-controls">
+                                <span class="opacity-label">Opacidade:</span>
+                                <input type="range" class="layer-opacity" id="op-drainage" min="0" max="1" step="0.1" value="0.7">
+                            </div>
+                        </div>
+
+                        <!-- Camada: SICAR -->
+                        <div class="layer-item">
+                            <div class="layer-main">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" id="chk-sicar" checked>
+                                    <span class="checkmark"></span>
+                                    <span class="layer-name">Imóveis Rurais (CAR)</span>
+                                </label>
+                                <i class="fa-solid fa-caret-down toggle-legend-btn" id="btn-toggle-legend-sicar"></i>
+                            </div>
+                            <div class="layer-controls">
+                                <span class="opacity-label">Opacidade:</span>
+                                <input type="range" class="layer-opacity" id="op-sicar" min="0" max="1" step="0.1" value="0.65">
+                            </div>
+                            
+                            <!-- Legenda do CAR -->
+                            <div class="layer-legend-detail" id="legend-detail-sicar">
+                                <div class="legend-detail-item">
+                                    <span class="legend-indicator fill sicar-at"></span>
+                                    <span>Ativo (AT)</span>
+                                </div>
+                                <div class="legend-detail-item">
+                                    <span class="legend-indicator fill sicar-pe"></span>
+                                    <span>Pendente (PE)</span>
+                                </div>
+                                <div class="legend-detail-item">
+                                    <span class="legend-indicator fill sicar-ca"></span>
+                                    <span>Cancelado (CA)</span>
+                                </div>
+                                <div class="legend-detail-item">
+                                    <span class="legend-indicator fill sicar-su"></span>
+                                    <span>Suspenso (SU)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção 3: Busca e Filtros -->
+                <div class="sidebar-section">
+                    <h3><i class="fa-solid fa-magnifying-glass-chart"></i> Busca & Filtros</h3>
+                    <div class="search-filter-box">
+                        <!-- Busca por Código CAR -->
+                        <div class="input-group">
+                            <label for="search-car">Buscar Imóvel CAR:</label>
+                            <div class="search-input-wrapper">
+                                <input type="text" id="search-car" placeholder="Digite o final do código CAR..." autocomplete="off">
+                                <button id="btn-clear-search" class="clear-btn" style="display: none;"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <!-- Painel de Sugestões de Busca -->
+                            <div id="search-suggestions" class="suggestions-panel" style="display: none;"></div>
+                        </div>
+
+                        <!-- Filtro por Situação Cadastral -->
+                        <div class="input-group">
+                            <label for="filter-status">Situação do Imóvel:</label>
+                            <select id="filter-status">
+                                <option value="all">-- Todos os Status --</option>
+                                <option value="ativo">Ativo (AT)</option>
+                                <option value="pendente">Pendente (PE)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção 4: Estatísticas Ambientais -->
+                <div class="sidebar-section">
+                    <h3><i class="fa-solid fa-chart-simple"></i> Resumo Estatístico</h3>
+                    <div class="stats-panel">
+                        <!-- CAR Total Cards -->
+                        <div class="stats-grid">
+                            <div class="stats-card">
+                                <span class="stats-val" id="stats-total-car">0</span>
+                                <span class="stats-label">Imóveis CAR</span>
+                            </div>
+                            <div class="stats-card">
+                                <span class="stats-val" id="stats-area-total">0 ha</span>
+                                <span class="stats-label">Área Total</span>
+                            </div>
+                        </div>
+
+                        <!-- Rodovias / Rios Cards -->
+                        <div class="stats-list">
+                            <div class="stats-list-item">
+                                <span><i class="fa-solid fa-road icon-fed"></i> Rodovias Federais (BR)</span>
+                                <strong id="stats-len-fed">0.0 km</strong>
+                            </div>
+                            <div class="stats-list-item">
+                                <span><i class="fa-solid fa-road icon-est"></i> Rodovias Estaduais (RO)</span>
+                                <strong id="stats-len-est">0.0 km</strong>
+                            </div>
+                            <div class="stats-list-item">
+                                <span><i class="fa-solid fa-water icon-water"></i> Drenagem</span>
+                                <strong id="stats-count-rivers">0 trechos</strong>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Status do CAR -->
+                        <div class="chart-container" style="position: relative; height: 180px; width: 100%; margin-top: 15px;">
+                            <canvas id="chart-sicar-status"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer da Sidebar -->
+            <div class="sidebar-footer">
+                <span>Geoportal Porto Velho v1.0</span>
+                <a href="https://github.com" target="_blank" title="Código-fonte"><i class="fa-brands fa-github"></i></a>
+            </div>
+        </aside>
+
+        <!-- Container do Mapa Leaflet -->
+        <main id="map"></main>
+
+        <!-- Barra de Status no Rodapé do Mapa -->
+        <div id="map-status-bar">
+            <div class="coords-display">
+                <i class="fa-solid fa-location-crosshairs"></i>
+                <span id="coords-val">Lat: 0.00000, Lng: 0.00000</span>
+            </div>
+            <div id="measure-result" style="display: none;">
+                <i class="fa-solid fa-ruler-combined"></i>
+                <span id="measure-val">Medição: 0.00 m</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Leaflet Geoman JS (Desenho/Medição) -->
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.0/dist/leaflet-geoman.min.js"></script>
+    
+    <!-- Chart.js (Gráficos) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="app.js"></script>
+</body>
+</html>

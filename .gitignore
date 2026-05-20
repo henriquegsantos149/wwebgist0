@@ -1,0 +1,12 @@
+# Arquivos espaciais pesados (shapefiles crus)
+*.shp
+*.dbf
+*.shx
+*.prj
+*.cst
+*.qgz
+
+# Dependências locais e ferramentas
+node_modules/
+ui-ux-pro-max-skill/
+.gemini/
